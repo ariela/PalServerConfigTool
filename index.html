@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Palworld サーバー設定ツール</title>
+  <style>
+    :root {
+      --bg-primary: #1a1a2e;
+      --bg-secondary: #16213e;
+      --bg-card: #1f2937;
+      --bg-input: #374151;
+      --text-primary: #e5e7eb;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-success: #10b981;
+      --accent-danger: #ef4444;
+      --border: #374151;
+      --toggle-on: #3b82f6;
+      --toggle-off: #4b5563;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'Segoe UI', 'Hiragino Sans', 'Noto Sans JP', sans-serif;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .app-header {
+      background: var(--bg-secondary);
+      padding: 20px 24px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .app-header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .app-header .subtitle {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 2px;
+    }
+
+    .tab-nav {
+      display: flex;
+      gap: 2px;
+      padding: 0 24px;
+      background: var(--bg-secondary);
+      border-bottom: 2px solid var(--border);
+    }
+
+    .tab-nav button {
+      padding: 10px 20px;
+      background: transparent;
+      color: var(--text-secondary);
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-family: inherit;
+      transition: color 0.2s, border-color 0.2s;
+      margin-bottom: -2px;
+    }
+
+    .tab-nav button:hover {
+      color: var(--text-primary);
+    }
+
+    .tab-nav button.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-content {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 20px 24px 40px;
+    }
+
+    /* Settings Tab */
+    .settings-toolbar {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 16px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.9rem;
+      transition: background 0.2s, opacity 0.2s;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+
+    .btn-danger {
+      background: var(--accent-danger);
+      color: #fff;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #dc2626;
+    }
+
+    .btn-success {
+      background: var(--accent-success);
+      color: #fff;
+    }
+
+    .btn-success:hover:not(:disabled) {
+      background: #059669;
+    }
+
+    .category-section {
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .category-header {
+      display: flex;
+      align-items: center;
+      padding: 14px 18px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s;
+    }
+
+    .category-header:hover {
+      background: rgba(255,255,255,0.03);
+    }
+
+    .category-icon {
+      margin-right: 10px;
+      font-size: 1.1rem;
+    }
+
+    .category-label {
+      font-weight: 600;
+      font-size: 1rem;
+      flex: 1;
+    }
+
+    .category-count {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-right: 12px;
+    }
+
+    .category-toggle {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      transition: transform 0.2s;
+    }
+
+    .category-body {
+      border-top: 1px solid var(--border);
+    }
+
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 18px;
+      border-bottom: 1px solid rgba(55,65,81,0.5);
+      gap: 16px;
+    }
+
+    .setting-row:last-child {
+      border-bottom: none;
+    }
+
+    .setting-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .setting-label {
+      font-weight: 500;
+      font-size: 0.9rem;
+      display: block;
+    }
+
+    .setting-key {
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: block;
+      margin-top: 1px;
+    }
+
+    .setting-desc {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .setting-control {
+      flex-shrink: 0;
+      min-width: 180px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .input-number {
+      width: 140px;
+      padding: 6px 10px;
+      background: var(--bg-input);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'Consolas', monospace;
+      font-size: 0.9rem;
+      text-align: right;
+    }
+
+    .input-number:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .input-text {
+      width: 220px;
+      padding: 6px 10px;
+      background: var(--bg-input);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+    }
+
+    .input-text:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .input-select {
+      padding: 6px 10px;
+      background: var(--bg-input);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .input-select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* Toggle Switch */
+    .toggle-switch {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .toggle-switch input { display: none; }
+
+    .toggle-slider {
+      width: 44px;
+      height: 24px;
+      background: var(--toggle-off);
+      border-radius: 12px;
+      position: relative;
+      transition: background 0.3s;
+      flex-shrink: 0;
+    }
+
+    .toggle-slider::after {
+      content: '';
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+      transition: transform 0.3s;
+    }
+
+    .toggle-switch input:checked + .toggle-slider {
+      background: var(--toggle-on);
+    }
+
+    .toggle-switch input:checked + .toggle-slider::after {
+      transform: translateX(20px);
+    }
+
+    .toggle-label {
+      font-family: 'Consolas', monospace;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      min-width: 36px;
+    }
+
+    /* Preview Tab */
+    .preview-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .copy-feedback {
+      color: var(--accent-success);
+      font-size: 0.85rem;
+    }
+
+    .ini-output {
+      background: var(--bg-card);
+      padding: 20px;
+      border-radius: var(--radius-md);
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      font-size: 0.85rem;
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.6;
+      border: 1px solid var(--border);
+      max-height: 70vh;
+      overflow-y: auto;
+      user-select: all;
+    }
+
+    /* Export/Import Tab */
+    .export-import-section {
+      background: var(--bg-card);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    .export-import-section h2 {
+      font-size: 1.1rem;
+      margin-bottom: 8px;
+    }
+
+    .export-import-section p {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      margin-bottom: 14px;
+    }
+
+    .data-textarea {
+      width: 100%;
+      min-height: 120px;
+      padding: 12px;
+      background: var(--bg-input);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-family: 'Consolas', monospace;
+      font-size: 0.85rem;
+      resize: vertical;
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }
+
+    .data-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .error-msg {
+      color: var(--accent-danger);
+      font-size: 0.85rem;
+      margin-top: 8px;
+    }
+
+    .success-msg {
+      color: var(--accent-success);
+      font-size: 0.85rem;
+      margin-top: 8px;
+    }
+
+    .app-footer {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border);
+      margin-top: 40px;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .tab-nav {
+        padding: 0 12px;
+      }
+
+      .tab-nav button {
+        padding: 8px 12px;
+        font-size: 0.85rem;
+      }
+
+      .tab-content {
+        padding: 16px 12px 40px;
+      }
+
+      .setting-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px 14px;
+      }
+
+      .setting-control {
+        min-width: 0;
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .input-number, .input-text {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header class="app-header">
+      <h1>Palworld サーバー設定ツール</h1>
+      <p class="subtitle">PalWorldSettings.ini ジェネレーター</p>
+    </header>
+
+    <nav class="tab-nav">
+      <button @click="activeTab = 'settings'" :class="{ active: activeTab === 'settings' }">設定編集</button>
+      <button @click="activeTab = 'preview'" :class="{ active: activeTab === 'preview' }">設定プレビュー</button>
+      <button @click="activeTab = 'export'" :class="{ active: activeTab === 'export' }">エクスポート / インポート</button>
+    </nav>
+
+    <main class="tab-content">
+      <!-- Settings Tab -->
+      <div v-show="activeTab === 'settings'">
+        <div class="settings-toolbar">
+          <button class="btn btn-danger" @click="resetToDefaults">デフォルトに戻す</button>
+        </div>
+
+        <section v-for="category in categories" :key="category.id" class="category-section">
+          <div class="category-header" @click="toggleCategory(category.id)">
+            <span class="category-icon">{{ category.icon }}</span>
+            <span class="category-label">{{ category.label }}</span>
+            <span class="category-count">{{ category.settings.length }}項目</span>
+            <span class="category-toggle">{{ openCategories[category.id] ? '\u25BC' : '\u25B6' }}</span>
+          </div>
+
+          <div v-show="openCategories[category.id]" class="category-body">
+            <div v-for="key in category.settings" :key="key" class="setting-row">
+              <div class="setting-info">
+                <label :for="key" class="setting-label">{{ schema[key].label }}</label>
+                <span class="setting-key">{{ key }}</span>
+                <p v-if="schema[key].description" class="setting-desc">{{ schema[key].description }}</p>
+              </div>
+
+              <div class="setting-control">
+                <!-- Float -->
+                <template v-if="schema[key].type === 'float'">
+                  <input type="number" :id="key" v-model.number="settings[key]"
+                         :step="schema[key].step" :min="schema[key].min" class="input-number" />
+                </template>
+
+                <!-- Integer -->
+                <template v-else-if="schema[key].type === 'integer'">
+                  <input type="number" :id="key" v-model.number="settings[key]"
+                         step="1" :min="schema[key].min" class="input-number" />
+                </template>
+
+                <!-- Boolean -->
+                <template v-else-if="schema[key].type === 'boolean'">
+                  <label class="toggle-switch">
+                    <input type="checkbox" :id="key" v-model="settings[key]" />
+                    <span class="toggle-slider"></span>
+                    <span class="toggle-label">{{ settings[key] ? 'True' : 'False' }}</span>
+                  </label>
+                </template>
+
+                <!-- String -->
+                <template v-else-if="schema[key].type === 'string'">
+                  <input type="text" :id="key" v-model="settings[key]" class="input-text" />
+                </template>
+
+                <!-- Enum -->
+                <template v-else-if="schema[key].type === 'enum'">
+                  <select :id="key" v-model="settings[key]" class="input-select">
+                    <option v-for="opt in schema[key].options" :key="opt" :value="opt">{{ opt }}</option>
+                  </select>
+                </template>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Preview Tab -->
+      <div v-show="activeTab === 'preview'">
+        <div class="preview-toolbar">
+          <button class="btn btn-primary" @click="copyToClipboard">クリップボードにコピー</button>
+          <span v-if="copySuccess" class="copy-feedback">コピーしました！</span>
+        </div>
+        <pre class="ini-output">{{ iniOutput }}</pre>
+      </div>
+
+      <!-- Export/Import Tab -->
+      <div v-show="activeTab === 'export'">
+        <section class="export-import-section">
+          <h2>エクスポート</h2>
+          <p>現在の設定をBASE64文字列として出力します。他のブラウザへ設定を共有できます。</p>
+          <button class="btn btn-primary" @click="doExport">エクスポート</button>
+          <textarea v-if="exportData" readonly class="data-textarea"
+                    :value="exportData" @click="selectAllText($event)"></textarea>
+        </section>
+
+        <section class="export-import-section">
+          <h2>インポート</h2>
+          <p>エクスポートしたBASE64文字列を貼り付けて設定を読み込みます。</p>
+          <textarea v-model="importData" class="data-textarea"
+                    placeholder="BASE64文字列をここに貼り付け..."></textarea>
+          <button class="btn btn-success" @click="doImport" :disabled="!importData.trim()">インポート</button>
+          <p v-if="importError" class="error-msg">{{ importError }}</p>
+          <p v-if="importSuccess" class="success-msg">設定をインポートしました！</p>
+        </section>
+      </div>
+    </main>
+
+    <footer class="app-footer">
+      <p>Palworld サーバー設定ツール | データはブラウザのlocalStorageに保存されます</p>
+    </footer>
+  </div>
+
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+
+  <script>
+    // ============================================================
+    // SETTINGS SCHEMA
+    // ============================================================
+    const SETTINGS_SCHEMA = {
+      // Enum
+      Difficulty: {
+        type: 'enum', default: 'None', options: ['None'],
+        category: 'general', label: '難易度', description: 'ゲームの難易度を設定します'
+      },
+      // Time
+      DayTimeSpeedRate: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'time', label: '昼の速度倍率', description: '昼の経過速度を変更します'
+      },
+      NightTimeSpeedRate: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'time', label: '夜の速度倍率', description: '夜の経過速度を変更します'
+      },
+      // Player
+      ExpRate: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'player', label: '経験値倍率', description: '獲得経験値の倍率を設定します'
+      },
+      PalCaptureRate: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'pal', label: 'パル捕獲率', description: 'パルの捕獲成功率を変更します'
+      },
+      PalSpawnNumRate: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'pal', label: 'パル出現数倍率', description: 'パルの出現数を変更します'
+      },
+      PalDamageRateAttack: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'pal', label: 'パル攻撃ダメージ倍率', description: 'パルが与えるダメージの倍率'
+      },
+      PalDamageRateDefense: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'pal', label: 'パル防御ダメージ倍率', description: 'パルが受けるダメージの倍率'
+      },
+      PlayerDamageRateAttack: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'player', label: 'プレイヤー攻撃ダメージ倍率', description: 'プレイヤーが与えるダメージの倍率'
+      },
+      PlayerDamageRateDefense: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'player', label: 'プレイヤー防御ダメージ倍率', description: 'プレイヤーが受けるダメージの倍率'
+      },
+      PlayerStomachDecreaceRate: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'player', label: 'プレイヤー空腹速度', description: 'プレイヤーの満腹度減少速度'
+      },
+      PlayerStaminaDecreaceRate: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'player', label: 'プレイヤースタミナ減少速度', description: 'プレイヤーのスタミナ減少速度'
+      },
+      PlayerAutoHPRegeneRate: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'player', label: 'プレイヤーHP自然回復率', description: 'プレイヤーのHP自動回復速度'
+      },
+      PlayerAutoHpRegeneRateInSleep: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'player', label: 'プレイヤー睡眠時HP回復率', description: 'プレイヤーの睡眠時HP回復速度'
+      },
+      PalStomachDecreaceRate: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'pal', label: 'パル空腹速度', description: 'パルの満腹度減少速度'
+      },
+      PalStaminaDecreaceRate: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'pal', label: 'パルスタミナ減少速度', description: 'パルのスタミナ減少速度'
+      },
+      PalAutoHPRegeneRate: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'pal', label: 'パルHP自然回復率', description: 'パルのHP自動回復速度'
+      },
+      PalAutoHpRegeneRateInSleep: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'pal', label: 'パル睡眠時HP回復率', description: 'パルの睡眠時HP回復速度'
+      },
+      BuildObjectDamageRate: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'world', label: '建築物被ダメージ倍率', description: '建築物が受けるダメージの倍率'
+      },
+      BuildObjectDeteriorationDamageRate: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'world', label: '建築物劣化速度倍率', description: '建築物の劣化ダメージ速度'
+      },
+      CollectionDropRate: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'world', label: '採集ドロップ倍率', description: '採集時のドロップ量倍率'
+      },
+      CollectionObjectHpRate: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'world', label: '採集オブジェクトHP倍率', description: '木や岩などのHP倍率'
+      },
+      CollectionObjectRespawnSpeedRate: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'world', label: '採集オブジェクトリスポーン速度', description: '採集オブジェクトの再出現速度'
+      },
+      EnemyDropItemRate: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'world', label: '敵ドロップアイテム倍率', description: '敵が落とすアイテムの量'
+      },
+      DeathPenalty: {
+        type: 'enum', default: 'All', options: ['None', 'Item', 'ItemAndEquipment', 'All'],
+        category: 'player', label: 'デスペナルティ', description: '死亡時のペナルティ (None/Item/ItemAndEquipment/All)'
+      },
+      bEnablePlayerToPlayerDamage: {
+        type: 'boolean', default: false,
+        category: 'pvp', label: 'プレイヤー間ダメージ', description: 'プレイヤー同士のダメージを有効にします'
+      },
+      bEnableFriendlyFire: {
+        type: 'boolean', default: false,
+        category: 'pvp', label: 'フレンドリーファイア', description: '味方へのダメージを有効にします'
+      },
+      bEnableInvaderEnemy: {
+        type: 'boolean', default: true,
+        category: 'world', label: '襲撃イベント', description: '拠点への敵襲撃イベントを有効にします'
+      },
+      bActiveUNKO: {
+        type: 'boolean', default: false,
+        category: 'world', label: 'UNKO', description: 'UNKOを有効にします'
+      },
+      bEnableAimAssistPad: {
+        type: 'boolean', default: true,
+        category: 'gameplay', label: 'パッドエイムアシスト', description: 'コントローラーのエイムアシストを有効にします'
+      },
+      bEnableAimAssistKeyboard: {
+        type: 'boolean', default: false,
+        category: 'gameplay', label: 'キーボードエイムアシスト', description: 'キーボードのエイムアシストを有効にします'
+      },
+      DropItemMaxNum: {
+        type: 'integer', default: 3000, min: 0, step: 1,
+        category: 'world', label: 'ドロップアイテム最大数', description: 'ワールド内のドロップアイテム最大数'
+      },
+      DropItemMaxNum_UNKO: {
+        type: 'integer', default: 100, min: 0, step: 1,
+        category: 'world', label: 'UNKOドロップ最大数', description: 'UNKOドロップアイテムの最大数'
+      },
+      BaseCampMaxNum: {
+        type: 'integer', default: 128, min: 1, step: 1,
+        category: 'base', label: '拠点最大数', description: 'ワールド内の拠点の最大数'
+      },
+      BaseCampWorkerMaxNum: {
+        type: 'integer', default: 15, min: 1, step: 1,
+        category: 'base', label: '拠点ワーカー最大数', description: '拠点で働けるパルの最大数'
+      },
+      DropItemAliveMaxHours: {
+        type: 'float', default: 1.0, min: 0, step: 0.5,
+        category: 'world', label: 'ドロップアイテム存続時間', description: 'ドロップアイテムが消えるまでの時間(時間)'
+      },
+      bAutoResetGuildNoOnlinePlayers: {
+        type: 'boolean', default: false,
+        category: 'base', label: 'オフラインギルド自動リセット', description: 'メンバーが全員オフラインのギルドを自動リセットします'
+      },
+      AutoResetGuildTimeNoOnlinePlayers: {
+        type: 'float', default: 72.0, min: 0, step: 1.0,
+        category: 'base', label: 'ギルドリセット時間(h)', description: 'ギルド自動リセットまでの時間(時間)'
+      },
+      GuildPlayerMaxNum: {
+        type: 'integer', default: 20, min: 1, step: 1,
+        category: 'base', label: 'ギルド最大人数', description: 'ギルドに所属できる最大プレイヤー数'
+      },
+      PalEggDefaultHatchingTime: {
+        type: 'float', default: 72.0, min: 0, step: 1.0,
+        category: 'pal', label: 'タマゴ孵化時間(h)', description: 'パルのタマゴが孵化するまでの時間(時間)'
+      },
+      WorkSpeedRate: {
+        type: 'float', default: 1.0, min: 0, step: 0.1,
+        category: 'world', label: '作業速度倍率', description: 'ゲーム内の作業速度の倍率'
+      },
+      bIsMultiplay: {
+        type: 'boolean', default: false,
+        category: 'server', label: 'マルチプレイ有効', description: 'マルチプレイモードを有効にします'
+      },
+      bIsPvP: {
+        type: 'boolean', default: false,
+        category: 'pvp', label: 'PvP有効', description: 'PvPモードを有効にします'
+      },
+      bCanPickupOtherGuildDeathPenaltyDrop: {
+        type: 'boolean', default: false,
+        category: 'pvp', label: '他ギルドデスドロップ拾得', description: '他ギルドのデスペナルティドロップを拾えるようにします'
+      },
+      bEnableNonLoginPenalty: {
+        type: 'boolean', default: true,
+        category: 'gameplay', label: '未ログインペナルティ', description: 'ログインしていないプレイヤーへのペナルティを有効にします'
+      },
+      bEnableFastTravel: {
+        type: 'boolean', default: true,
+        category: 'gameplay', label: 'ファストトラベル有効', description: 'ファストトラベルを有効にします'
+      },
+      bIsStartLocationSelectByMap: {
+        type: 'boolean', default: true,
+        category: 'gameplay', label: 'マップでスタート地点選択', description: 'マップからスタート地点を選択できるようにします'
+      },
+      bExistPlayerAfterLogout: {
+        type: 'boolean', default: false,
+        category: 'gameplay', label: 'ログアウト後プレイヤー残存', description: 'ログアウト後もプレイヤーキャラクターがワールドに残ります'
+      },
+      bEnableDefenseOtherGuildPlayer: {
+        type: 'boolean', default: false,
+        category: 'pvp', label: '他ギルドプレイヤー防衛', description: '他ギルドのプレイヤーに対する防衛を有効にします'
+      },
+      CoopPlayerMaxNum: {
+        type: 'integer', default: 4, min: 1, step: 1,
+        category: 'server', label: '協力プレイ最大人数', description: '協力プレイの最大人数'
+      },
+      ServerPlayerMaxNum: {
+        type: 'integer', default: 32, min: 1, step: 1,
+        category: 'server', label: 'サーバー最大人数', description: 'サーバーに参加できる最大プレイヤー数'
+      },
+      ServerName: {
+        type: 'string', default: 'Default Palworld Server',
+        category: 'server', label: 'サーバー名', description: 'サーバーの表示名'
+      },
+      ServerDescription: {
+        type: 'string', default: '',
+        category: 'server', label: 'サーバー説明', description: 'サーバーの説明文'
+      },
+      AdminPassword: {
+        type: 'string', default: '',
+        category: 'server', label: '管理者パスワード', description: 'サーバー管理用パスワード'
+      },
+      ServerPassword: {
+        type: 'string', default: '',
+        category: 'server', label: 'サーバーパスワード', description: 'サーバー参加用パスワード'
+      },
+      PublicPort: {
+        type: 'integer', default: 8211, min: 1, step: 1,
+        category: 'server', label: '公開ポート', description: 'サーバーの公開ポート番号'
+      },
+      PublicIP: {
+        type: 'string', default: '',
+        category: 'server', label: '公開IPアドレス', description: 'サーバーの公開IPアドレス'
+      },
+      RCONEnabled: {
+        type: 'boolean', default: false,
+        category: 'server', label: 'RCON有効', description: 'リモートコンソール(RCON)を有効にします'
+      },
+      RCONPort: {
+        type: 'integer', default: 25575, min: 1, step: 1,
+        category: 'server', label: 'RCONポート', description: 'RCONのポート番号'
+      },
+      Region: {
+        type: 'string', default: '',
+        category: 'server', label: 'リージョン', description: 'サーバーのリージョン'
+      },
+      bUseAuth: {
+        type: 'boolean', default: true,
+        category: 'server', label: '認証使用', description: 'サーバー認証を使用します'
+      },
+      BanListURL: {
+        type: 'string', default: 'https://api.palworldgame.com/api/banlist.txt',
+        category: 'server', label: 'BANリストURL', description: 'BANリストのURL'
+      }
+    };
+
+    // ============================================================
+    // CATEGORIES
+    // ============================================================
+    const CATEGORIES = [
+      {
+        id: 'general', label: '基本設定', icon: '\u2699',
+        settings: ['Difficulty']
+      },
+      {
+        id: 'time', label: '時間設定', icon: '\u23F0',
+        settings: ['DayTimeSpeedRate', 'NightTimeSpeedRate']
+      },
+      {
+        id: 'player', label: 'プレイヤー設定', icon: '\u{1F464}',
+        settings: [
+          'ExpRate', 'PlayerDamageRateAttack', 'PlayerDamageRateDefense',
+          'PlayerStomachDecreaceRate', 'PlayerStaminaDecreaceRate',
+          'PlayerAutoHPRegeneRate', 'PlayerAutoHpRegeneRateInSleep',
+          'DeathPenalty'
+        ]
+      },
+      {
+        id: 'pal', label: 'パル設定', icon: '\u{1F43E}',
+        settings: [
+          'PalCaptureRate', 'PalSpawnNumRate',
+          'PalDamageRateAttack', 'PalDamageRateDefense',
+          'PalStomachDecreaceRate', 'PalStaminaDecreaceRate',
+          'PalAutoHPRegeneRate', 'PalAutoHpRegeneRateInSleep',
+          'PalEggDefaultHatchingTime'
+        ]
+      },
+      {
+        id: 'pvp', label: 'PvP設定', icon: '\u2694',
+        settings: [
+          'bEnablePlayerToPlayerDamage', 'bEnableFriendlyFire',
+          'bIsPvP', 'bEnableDefenseOtherGuildPlayer',
+          'bCanPickupOtherGuildDeathPenaltyDrop'
+        ]
+      },
+      {
+        id: 'world', label: 'ワールド設定', icon: '\u{1F30D}',
+        settings: [
+          'bEnableInvaderEnemy', 'bActiveUNKO',
+          'DropItemMaxNum', 'DropItemMaxNum_UNKO', 'DropItemAliveMaxHours',
+          'CollectionDropRate', 'CollectionObjectHpRate', 'CollectionObjectRespawnSpeedRate',
+          'EnemyDropItemRate',
+          'BuildObjectDamageRate', 'BuildObjectDeteriorationDamageRate',
+          'WorkSpeedRate'
+        ]
+      },
+      {
+        id: 'base', label: '拠点・ギルド設定', icon: '\u{1F3E0}',
+        settings: [
+          'BaseCampMaxNum', 'BaseCampWorkerMaxNum',
+          'GuildPlayerMaxNum',
+          'bAutoResetGuildNoOnlinePlayers', 'AutoResetGuildTimeNoOnlinePlayers'
+        ]
+      },
+      {
+        id: 'gameplay', label: 'ゲームプレイ設定', icon: '\u{1F3AE}',
+        settings: [
+          'bEnableAimAssistPad', 'bEnableAimAssistKeyboard',
+          'bEnableNonLoginPenalty', 'bEnableFastTravel',
+          'bIsStartLocationSelectByMap', 'bExistPlayerAfterLogout'
+        ]
+      },
+      {
+        id: 'server', label: 'サーバー設定', icon: '\u{1F5A5}',
+        settings: [
+          'ServerName', 'ServerDescription',
+          'AdminPassword', 'ServerPassword',
+          'ServerPlayerMaxNum', 'CoopPlayerMaxNum',
+          'PublicIP', 'PublicPort',
+          'bIsMultiplay',
+          'RCONEnabled', 'RCONPort',
+          'bUseAuth', 'Region', 'BanListURL'
+        ]
+      }
+    ];
+
+    // ============================================================
+    // PARAMETER ORDER (matches DefaultPalWorldSettings.ini)
+    // ============================================================
+    const PARAM_ORDER = [
+      'Difficulty',
+      'DayTimeSpeedRate', 'NightTimeSpeedRate',
+      'ExpRate', 'PalCaptureRate', 'PalSpawnNumRate',
+      'PalDamageRateAttack', 'PalDamageRateDefense',
+      'PlayerDamageRateAttack', 'PlayerDamageRateDefense',
+      'PlayerStomachDecreaceRate', 'PlayerStaminaDecreaceRate',
+      'PlayerAutoHPRegeneRate', 'PlayerAutoHpRegeneRateInSleep',
+      'PalStomachDecreaceRate', 'PalStaminaDecreaceRate',
+      'PalAutoHPRegeneRate', 'PalAutoHpRegeneRateInSleep',
+      'BuildObjectDamageRate', 'BuildObjectDeteriorationDamageRate',
+      'CollectionDropRate', 'CollectionObjectHpRate',
+      'CollectionObjectRespawnSpeedRate', 'EnemyDropItemRate',
+      'DeathPenalty',
+      'bEnablePlayerToPlayerDamage', 'bEnableFriendlyFire',
+      'bEnableInvaderEnemy', 'bActiveUNKO',
+      'bEnableAimAssistPad', 'bEnableAimAssistKeyboard',
+      'DropItemMaxNum', 'DropItemMaxNum_UNKO',
+      'BaseCampMaxNum', 'BaseCampWorkerMaxNum',
+      'DropItemAliveMaxHours',
+      'bAutoResetGuildNoOnlinePlayers', 'AutoResetGuildTimeNoOnlinePlayers',
+      'GuildPlayerMaxNum',
+      'PalEggDefaultHatchingTime', 'WorkSpeedRate',
+      'bIsMultiplay', 'bIsPvP',
+      'bCanPickupOtherGuildDeathPenaltyDrop',
+      'bEnableNonLoginPenalty', 'bEnableFastTravel',
+      'bIsStartLocationSelectByMap',
+      'bExistPlayerAfterLogout',
+      'bEnableDefenseOtherGuildPlayer',
+      'CoopPlayerMaxNum', 'ServerPlayerMaxNum',
+      'ServerName', 'ServerDescription',
+      'AdminPassword', 'ServerPassword',
+      'PublicPort', 'PublicIP',
+      'RCONEnabled', 'RCONPort',
+      'Region', 'bUseAuth', 'BanListURL'
+    ];
+
+    // ============================================================
+    // HELPER FUNCTIONS
+    // ============================================================
+    const STORAGE_KEY = 'palworld-server-settings';
+
+    function getDefaultSettings() {
+      const defaults = {};
+      Object.keys(SETTINGS_SCHEMA).forEach(key => {
+        defaults[key] = SETTINGS_SCHEMA[key].default;
+      });
+      return defaults;
+    }
+
+    function formatValue(value, type) {
+      switch (type) {
+        case 'float':
+          return Number(value).toFixed(6);
+        case 'integer':
+          return Math.floor(Number(value)).toString();
+        case 'boolean':
+          return value ? '"True"' : '"False"';
+        case 'string':
+          return '"' + String(value) + '"';
+        case 'enum':
+          return String(value);
+        default:
+          return String(value);
+      }
+    }
+
+    function generateIniOutput(settings) {
+      const header = '[/Script/Pal.PalGameWorldSettings]';
+      const pairs = PARAM_ORDER.map(key => {
+        const schema = SETTINGS_SCHEMA[key];
+        const value = settings[key];
+        return key + '=' + formatValue(value, schema.type);
+      });
+      return header + '\nOptionSettings=(' + pairs.join(',') + ')';
+    }
+
+    function saveToLocalStorage(settings) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+      } catch (e) {
+        console.error('Failed to save to localStorage:', e);
+      }
+    }
+
+    function loadFromLocalStorage() {
+      try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        return data ? JSON.parse(data) : null;
+      } catch (e) {
+        console.error('Failed to load from localStorage:', e);
+        return null;
+      }
+    }
+
+    // ============================================================
+    // VUE APPLICATION
+    // ============================================================
+    const { createApp, ref, computed, watch, onMounted } = Vue;
+
+    const app = createApp({
+      setup() {
+        const activeTab = ref('settings');
+        const settings = ref(getDefaultSettings());
+        const openCategories = ref({});
+        const exportData = ref('');
+        const importData = ref('');
+        const importError = ref('');
+        const importSuccess = ref(false);
+        const copySuccess = ref(false);
+
+        // Initialize all categories as open
+        CATEGORIES.forEach(cat => {
+          openCategories.value[cat.id] = true;
+        });
+
+        // Computed: ini output
+        const iniOutput = computed(() => {
+          return generateIniOutput(settings.value);
+        });
+
+        // Auto-save to localStorage
+        watch(settings, (newVal) => {
+          saveToLocalStorage(newVal);
+        }, { deep: true });
+
+        // Load from localStorage on mount
+        onMounted(() => {
+          const saved = loadFromLocalStorage();
+          if (saved) {
+            Object.keys(saved).forEach(key => {
+              if (key in settings.value) {
+                settings.value[key] = saved[key];
+              }
+            });
+          }
+        });
+
+        // Methods
+        function toggleCategory(id) {
+          openCategories.value[id] = !openCategories.value[id];
+        }
+
+        function resetToDefaults() {
+          if (confirm('すべての設定をデフォルトに戻しますか？')) {
+            const defaults = getDefaultSettings();
+            Object.keys(defaults).forEach(key => {
+              settings.value[key] = defaults[key];
+            });
+          }
+        }
+
+        async function copyToClipboard() {
+          try {
+            await navigator.clipboard.writeText(iniOutput.value);
+            copySuccess.value = true;
+            setTimeout(() => { copySuccess.value = false; }, 2000);
+          } catch (e) {
+            const textarea = document.createElement('textarea');
+            textarea.value = iniOutput.value;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            copySuccess.value = true;
+            setTimeout(() => { copySuccess.value = false; }, 2000);
+          }
+        }
+
+        function doExport() {
+          try {
+            const json = JSON.stringify(settings.value);
+            exportData.value = LZString.compressToBase64(json);
+          } catch (e) {
+            exportData.value = '';
+            console.error('Export failed:', e);
+          }
+        }
+
+        function doImport() {
+          importError.value = '';
+          importSuccess.value = false;
+
+          try {
+            const trimmed = importData.value.trim();
+            if (!trimmed) {
+              importError.value = 'データが入力されていません';
+              return;
+            }
+
+            const json = LZString.decompressFromBase64(trimmed);
+            if (!json) {
+              importError.value = '無効なデータです。正しいエクスポートデータを貼り付けてください。';
+              return;
+            }
+
+            const parsed = JSON.parse(json);
+            const defaults = getDefaultSettings();
+            Object.keys(parsed).forEach(key => {
+              if (key in defaults) {
+                settings.value[key] = parsed[key];
+              }
+            });
+
+            importSuccess.value = true;
+            setTimeout(() => { importSuccess.value = false; }, 3000);
+          } catch (e) {
+            importError.value = 'データの読み込みに失敗しました: ' + e.message;
+          }
+        }
+
+        function selectAllText(event) {
+          event.target.select();
+        }
+
+        return {
+          activeTab, settings, openCategories,
+          exportData, importData, importError, importSuccess,
+          copySuccess, iniOutput,
+          schema: SETTINGS_SCHEMA,
+          categories: CATEGORIES,
+          toggleCategory, resetToDefaults, copyToClipboard,
+          doExport, doImport, selectAllText
+        };
+      }
+    });
+
+    app.mount('#app');
+  </script>
+</body>
+</html>
