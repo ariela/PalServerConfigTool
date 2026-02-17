@@ -1370,6 +1370,10 @@
             }
           });
 
+          if (applied === 0) {
+            iniImportError.value = '適用できる設定が見つかりませんでした。';
+            return;
+          }
           iniImportSuccessMsg.value = `${applied}件の設定を適用しました（${skipped}件をスキップ）`;
           iniImportSuccess.value = true;
           setTimeout(() => { iniImportSuccess.value = false; }, 4000);
