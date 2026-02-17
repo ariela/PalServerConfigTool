@@ -579,6 +579,7 @@ const PARAM_ORDER = [
 // HELPER FUNCTIONS
 // ============================================================
 const STORAGE_KEY = 'palworld-server-settings-v2';
+const CUSTOM_SETTINGS_KEY = 'palworld-custom-settings-v1';
 
 function getDefaultSettings() {
   const defaults = {};
@@ -738,14 +739,55 @@ function coerceValue(key, rawValue) {
   }
 }
 
-function generateIniOutput(settings) {
+function generateIniOutput(settings, customSettings) {
   const header = '[/Script/Pal.PalGameWorldSettings]';
   const pairs = PARAM_ORDER.map(key => {
     const schema = SETTINGS_SCHEMA[key];
     const value = settings[key];
     return key + '=' + formatValue(value, schema);
   });
-  return header + '\nOptionSettings=(' + pairs.join(',') + ')';
+
+  // Parse and add custom settings
+  const customPairs = [];
+  if (customSettings && customSettings.trim()) {
+    const lines = customSettings.split('\n');
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed && trimmed.includes('=')) {
+        const [key, ...valueParts] = trimmed.split('=');
+        const k = key.trim();
+        const v = valueParts.join('=').trim();
+        if (k && v) {
+          customPairs.push(k + '=' + v);
+        }
+      }
+    }
+  }
+
+  // Deduplicate keys: custom settings override standard settings
+  const keyValueMap = {};
+
+  // First, add all standard pairs
+  pairs.forEach(pair => {
+    const eqIndex = pair.indexOf('=');
+    if (eqIndex !== -1) {
+      const key = pair.substring(0, eqIndex);
+      keyValueMap[key] = pair;
+    }
+  });
+
+  // Then, add custom pairs (overriding any duplicates)
+  customPairs.forEach(pair => {
+    const eqIndex = pair.indexOf('=');
+    if (eqIndex !== -1) {
+      const key = pair.substring(0, eqIndex);
+      keyValueMap[key] = pair;
+    }
+  });
+
+  // Build final array from map entries
+  const allPairs = Object.values(keyValueMap);
+  return header + '\nOptionSettings=(' + allPairs.join(',') + ')';
 }
 
 function saveToLocalStorage(settings) {
@@ -763,6 +805,23 @@ function loadFromLocalStorage() {
   } catch (e) {
     console.error('Failed to load from localStorage:', e);
     return null;
+  }
+}
+
+function saveCustomSettings(customSettings) {
+  try {
+    localStorage.setItem(CUSTOM_SETTINGS_KEY, customSettings);
+  } catch (e) {
+    console.error('Failed to save custom settings:', e);
+  }
+}
+
+function loadCustomSettings() {
+  try {
+    return localStorage.getItem(CUSTOM_SETTINGS_KEY) || '';
+  } catch (e) {
+    console.error('Failed to load custom settings:', e);
+    return '';
   }
 }
 
@@ -785,12 +844,16 @@ const app = createApp({
     const iniImportError = ref('');
     const iniImportSuccess = ref(false);
     const iniImportSuccessMsg = ref('');
+    const customSettings = ref('');
+    const droppedItems = ref([]);
 
     CATEGORIES.forEach(cat => { openCategories.value[cat.id] = true; });
+    openCategories.value['custom'] = true;
 
-    const iniOutput = computed(() => generateIniOutput(settings.value));
+    const iniOutput = computed(() => generateIniOutput(settings.value, customSettings.value));
 
     watch(settings, (newVal) => { saveToLocalStorage(newVal); }, { deep: true });
+    watch(customSettings, (newVal) => { saveCustomSettings(newVal); });
 
     onMounted(() => {
       const saved = loadFromLocalStorage();
@@ -801,6 +864,7 @@ const app = createApp({
           }
         });
       }
+      customSettings.value = loadCustomSettings();
     });
 
     function toggleCategory(id) {
@@ -889,6 +953,7 @@ const app = createApp({
       iniImportError.value = '';
       iniImportSuccess.value = false;
       iniImportSuccessMsg.value = '';
+      droppedItems.value = [];
 
       const trimmed = iniImportData.value.trim();
       if (!trimmed) {
@@ -904,6 +969,8 @@ const app = createApp({
 
       let applied = 0;
       let skipped = 0;
+      const dropped = [];
+
       Object.entries(parsed).forEach(([key, rawValue]) => {
         if (key in SETTINGS_SCHEMA) {
           const coerced = coerceValue(key, rawValue);
@@ -914,6 +981,8 @@ const app = createApp({
             skipped++;
           }
         } else {
+          // Track dropped items
+          dropped.push({ key, value: rawValue });
           skipped++;
         }
       });
@@ -922,7 +991,24 @@ const app = createApp({
         iniImportError.value = '適用できる設定が見つかりませんでした。';
         return;
       }
-      iniImportSuccessMsg.value = `${applied}件の設定を適用しました（${skipped}件をスキップ）`;
+
+      // Store dropped items and add to custom settings
+      if (dropped.length > 0) {
+        droppedItems.value = dropped;
+        const customLines = dropped.map(item => `${item.key}=${item.value}`).join('\n');
+
+        // Append to existing custom settings if any
+        if (customSettings.value.trim()) {
+          customSettings.value = customSettings.value.trim() + '\n' + customLines;
+        } else {
+          customSettings.value = customLines;
+        }
+
+        iniImportSuccessMsg.value = `${applied}件の設定を適用しました（${skipped}件をスキップ、うち${dropped.length}件をカスタム設定に追加）`;
+      } else {
+        iniImportSuccessMsg.value = `${applied}件の設定を適用しました（${skipped}件をスキップ）`;
+      }
+
       iniImportSuccess.value = true;
       setTimeout(() => { iniImportSuccess.value = false; }, 4000);
     }
@@ -932,6 +1018,7 @@ const app = createApp({
       exportData, importData, importError, importSuccess,
       copySuccess, iniOutput,
       iniImportData, iniImportError, iniImportSuccess, iniImportSuccessMsg,
+      customSettings, droppedItems,
       schema: SETTINGS_SCHEMA,
       categories: CATEGORIES,
       getCategorySettingsCount,
