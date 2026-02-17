@@ -523,7 +523,7 @@ function formatValue(value, schema) {
     case 'boolean':
       return value ? '"True"' : '"False"';
     case 'string':
-      return '"' + String(value) + '"';
+      return '"' + String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
     case 'enum':
       return String(value);
     case 'platforms': {
