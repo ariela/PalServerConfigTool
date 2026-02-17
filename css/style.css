@@ -136,6 +136,18 @@ body {
 
 .category-body { border-top: 1px solid var(--border); }
 
+/* Subgroup */
+.subgroup + .subgroup { border-top: 1px solid var(--border); }
+
+.subgroup-header {
+  padding: 8px 18px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: rgba(255,255,255,0.02);
+  letter-spacing: 0.02em;
+}
+
 .setting-row {
   display: flex;
   justify-content: space-between;

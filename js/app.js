@@ -386,69 +386,145 @@ const SETTINGS_SCHEMA = {
 };
 
 // ============================================================
-// CATEGORIES（公式ドキュメントの4カテゴリ構成）
+// CATEGORIES（公式ドキュメントの4カテゴリ構成 + サブグループ）
 // ============================================================
 const CATEGORIES = [
   {
     id: 'performance', label: 'パフォーマンス関連', icon: '\u26A1',
-    settings: [
-      'BaseCampMaxNumInGuild', 'BaseCampWorkerMaxNum',
-      'ItemContainerForceMarkDirtyInterval', 'MaxBuildingLimitNum',
-      'ServerReplicatePawnCullDistance'
+    subgroups: [
+      {
+        id: 'perf-base', label: '\u{1F3E0} 拠点・建築',
+        settings: ['BaseCampMaxNumInGuild', 'BaseCampWorkerMaxNum', 'MaxBuildingLimitNum']
+      },
+      {
+        id: 'perf-sync', label: '\u2699\uFE0F 処理・同期',
+        settings: ['ItemContainerForceMarkDirtyInterval', 'ServerReplicatePawnCullDistance']
+      }
     ]
   },
   {
     id: 'server', label: 'サーバー関連', icon: '\u{1F5A5}',
-    settings: [
-      'ServerName', 'ServerDescription', 'ServerPassword', 'ServerPlayerMaxNum',
-      'AdminPassword', 'PublicPort', 'PublicIP',
-      'RCONEnabled', 'RCONPort',
-      'RESTAPIEnabled', 'RESTAPIPort',
-      'bAllowClientMod', 'bIsShowJoinLeftMessage', 'bIsUseBackupSaveData',
-      'ChatPostLimitPerMinute', 'CrossplayPlatforms', 'LogFormatType'
+    subgroups: [
+      {
+        id: 'srv-basic', label: '\u{1F4DB} 基本情報',
+        settings: ['ServerName', 'ServerDescription', 'ServerPassword', 'ServerPlayerMaxNum', 'AdminPassword']
+      },
+      {
+        id: 'srv-network', label: '\u{1F310} ネットワーク',
+        settings: ['PublicPort', 'PublicIP', 'CrossplayPlatforms']
+      },
+      {
+        id: 'srv-external', label: '\u{1F50C} 外部連携',
+        settings: ['RCONEnabled', 'RCONPort', 'RESTAPIEnabled', 'RESTAPIPort']
+      },
+      {
+        id: 'srv-misc', label: '\u{1F6E0} その他',
+        settings: ['bAllowClientMod', 'bIsShowJoinLeftMessage', 'bIsUseBackupSaveData', 'ChatPostLimitPerMinute', 'LogFormatType']
+      }
     ]
   },
   {
     id: 'gamefeat', label: 'ゲーム機能関連', icon: '\u{1F3AE}',
-    settings: [
-      'bEnableInvaderEnemy', 'bEnableFastTravel', 'bEnableFastTravelOnlyBaseCamp',
-      'bIsStartLocationSelectByMap', 'bExistPlayerAfterLogout',
-      'bAutoResetGuildNoOnlinePlayers', 'AutoResetGuildTimeNoOnlinePlayers',
-      'bHardcore', 'bCharacterRecreateInHardcore', 'bPalLost',
-      'bShowPlayerList', 'bBuildAreaLimit', 'bInvisibleOtherGuildBaseCampAreaFX',
-      'bAllowGlobalPalboxExport', 'bAllowGlobalPalboxImport',
-      'bAllowEnhanceStat_Health', 'bAllowEnhanceStat_Stamina',
-      'bAllowEnhanceStat_Attack', 'bAllowEnhanceStat_Weight', 'bAllowEnhanceStat_WorkSpeed',
-      'bDisplayPvPItemNumOnWorldMap_BaseCamp', 'bDisplayPvPItemNumOnWorldMap_Player',
-      'RandomizerType', 'bIsRandomizerPalLevelRandom', 'RandomizerSeed'
+    subgroups: [
+      {
+        id: 'gf-travel', label: '\u{1F680} 移動・探索',
+        settings: ['bEnableFastTravel', 'bEnableFastTravelOnlyBaseCamp', 'bIsStartLocationSelectByMap']
+      },
+      {
+        id: 'gf-guild', label: '\u{1F3F0} 拠点・ギルド',
+        settings: [
+          'bEnableInvaderEnemy', 'bAutoResetGuildNoOnlinePlayers', 'AutoResetGuildTimeNoOnlinePlayers',
+          'bBuildAreaLimit', 'bInvisibleOtherGuildBaseCampAreaFX'
+        ]
+      },
+      {
+        id: 'gf-death', label: '\u{1F480} 死亡・ハードコア',
+        settings: ['bExistPlayerAfterLogout', 'bHardcore', 'bCharacterRecreateInHardcore', 'bPalLost']
+      },
+      {
+        id: 'gf-stats', label: '\u{1F4CA} ステータス割り振り',
+        settings: [
+          'bAllowEnhanceStat_Health', 'bAllowEnhanceStat_Stamina',
+          'bAllowEnhanceStat_Attack', 'bAllowEnhanceStat_Weight', 'bAllowEnhanceStat_WorkSpeed'
+        ]
+      },
+      {
+        id: 'gf-palbox', label: '\u{1F4E6} パルボックス',
+        settings: ['bAllowGlobalPalboxExport', 'bAllowGlobalPalboxImport']
+      },
+      {
+        id: 'gf-pvp', label: '\u{1F3B2} PvP・ランダマイザー',
+        settings: [
+          'bShowPlayerList',
+          'bDisplayPvPItemNumOnWorldMap_BaseCamp', 'bDisplayPvPItemNumOnWorldMap_Player',
+          'RandomizerType', 'bIsRandomizerPalLevelRandom', 'RandomizerSeed'
+        ]
+      }
     ]
   },
   {
     id: 'balance', label: 'ゲームバランス関連', icon: '\u2696',
-    settings: [
-      'DayTimeSpeedRate', 'NightTimeSpeedRate',
-      'ExpRate', 'PalCaptureRate', 'PalSpawnNumRate',
-      'PalDamageRateAttack', 'PalDamageRateDefense',
-      'PlayerDamageRateAttack', 'PlayerDamageRateDefense',
-      'PlayerStomachDecreaceRate', 'PlayerStaminaDecreaceRate',
-      'PlayerAutoHPRegeneRate', 'PlayerAutoHpRegeneRateInSleep',
-      'PalStomachDecreaceRate', 'PalStaminaDecreaceRate',
-      'PalAutoHPRegeneRate', 'PalAutoHpRegeneRateInSleep',
-      'BuildObjectDamageRate', 'BuildObjectDeteriorationDamageRate',
-      'CollectionDropRate', 'CollectionObjectHpRate', 'CollectionObjectRespawnSpeedRate',
-      'EnemyDropItemRate', 'EquipmentDurabilityDamageRate',
-      'ItemWeightRate', 'ItemCorruptionMultiplier',
-      'DeathPenalty', 'PalEggDefaultHatchingTime',
-      'GuildPlayerMaxNum', 'GuildRejoinCooldownMinutes',
-      'SupplyDropSpan', 'BlockRespawnTime',
-      'RespawnPenaltyDurationThreshold', 'RespawnPenaltyTimeScale',
-      'bAdditionalDropItemWhenPlayerKillingInPvPMode',
-      'AdditionalDropItemWhenPlayerKillingInPvPMode',
-      'AdditionalDropItemNumWhenPlayerKillingInPvPMode',
-      'DenyTechnologyList'
+    subgroups: [
+      {
+        id: 'bal-time', label: '\u{1F550} 時間・経験値',
+        settings: ['DayTimeSpeedRate', 'NightTimeSpeedRate', 'ExpRate']
+      },
+      {
+        id: 'bal-pal', label: '\u{1F43E} パル関連',
+        settings: [
+          'PalCaptureRate', 'PalSpawnNumRate',
+          'PalDamageRateAttack', 'PalDamageRateDefense',
+          'PalStomachDecreaceRate', 'PalStaminaDecreaceRate',
+          'PalAutoHPRegeneRate', 'PalAutoHpRegeneRateInSleep',
+          'PalEggDefaultHatchingTime'
+        ]
+      },
+      {
+        id: 'bal-player', label: '\u{1F9D1} プレイヤー関連',
+        settings: [
+          'PlayerDamageRateAttack', 'PlayerDamageRateDefense',
+          'PlayerStomachDecreaceRate', 'PlayerStaminaDecreaceRate',
+          'PlayerAutoHPRegeneRate', 'PlayerAutoHpRegeneRateInSleep'
+        ]
+      },
+      {
+        id: 'bal-build', label: '\u{1F3D7} 建築・採集',
+        settings: [
+          'BuildObjectDamageRate', 'BuildObjectDeteriorationDamageRate',
+          'CollectionDropRate', 'CollectionObjectHpRate', 'CollectionObjectRespawnSpeedRate',
+          'EnemyDropItemRate'
+        ]
+      },
+      {
+        id: 'bal-item', label: '\u{1F392} 装備・アイテム',
+        settings: ['EquipmentDurabilityDamageRate', 'ItemWeightRate', 'ItemCorruptionMultiplier']
+      },
+      {
+        id: 'bal-respawn', label: '\u{1F465} ギルド・リスポーン',
+        settings: [
+          'GuildPlayerMaxNum', 'GuildRejoinCooldownMinutes',
+          'SupplyDropSpan', 'BlockRespawnTime',
+          'RespawnPenaltyDurationThreshold', 'RespawnPenaltyTimeScale',
+          'DeathPenalty'
+        ]
+      },
+      {
+        id: 'bal-pvp', label: '\u2694\uFE0F PvP・テクノロジー',
+        settings: [
+          'bAdditionalDropItemWhenPlayerKillingInPvPMode',
+          'AdditionalDropItemWhenPlayerKillingInPvPMode',
+          'AdditionalDropItemNumWhenPlayerKillingInPvPMode',
+          'DenyTechnologyList'
+        ]
+      }
     ]
   }
 ];
+
+// カテゴリの総設定項目数を取得するヘルパー
+function getCategorySettingsCount(category) {
+  return category.subgroups.reduce((sum, sub) => sum + sub.settings.length, 0);
+}
 
 // ============================================================
 // PARAMETER ORDER（公式ドキュメントの記載順に準拠）
@@ -857,6 +933,7 @@ const app = createApp({
       iniImportData, iniImportError, iniImportSuccess, iniImportSuccessMsg,
       schema: SETTINGS_SCHEMA,
       categories: CATEGORIES,
+      getCategorySettingsCount,
       toggleCategory, togglePlatform, resetToDefaults,
       copyToClipboard, doExport, doImport, selectAllText, doImportIni
     };
