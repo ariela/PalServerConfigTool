@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Palworld サーバー設定ツール</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
   <div id="app">
     <header class="app-header">
@@ -30,71 +32,71 @@
           <div class="category-header" @click="toggleCategory(category.id)">
             <span class="category-icon">{{ category.icon }}</span>
             <span class="category-label">{{ category.label }}</span>
-            <span class="category-count">{{ category.settings.length }}項目</span>
+            <span class="category-count">{{ getCategorySettingsCount(category) }}項目</span>
             <span class="category-toggle">{{ openCategories[category.id] ? '\u25BC' : '\u25B6' }}</span>
           </div>
 
           <div v-show="openCategories[category.id]" class="category-body">
-            <div v-for="key in category.settings" :key="key" class="setting-row">
-              <div class="setting-info">
-                <label :for="key" class="setting-label">{{ schema[key].label }}</label>
-                <span class="setting-key">{{ key }}</span>
-                <p v-if="schema[key].description" class="setting-desc">{{ schema[key].description }}</p>
-              </div>
+            <div v-for="sub in category.subgroups" :key="sub.id" class="subgroup">
+              <div class="subgroup-header">{{ sub.label }}</div>
+              <div v-for="key in sub.settings" :key="key" class="setting-row">
+                <div class="setting-info">
+                  <label :for="key" class="setting-label">{{ schema[key].label }}</label>
+                  <span class="setting-key">{{ key }}</span>
+                  <p v-if="schema[key].description" class="setting-desc">{{ schema[key].description }}</p>
+                </div>
 
-              <div class="setting-control">
-                <!-- Float -->
-                <template v-if="schema[key].type === 'float'">
-                  <input type="number" :id="key" v-model.number="settings[key]"
-                         :step="schema[key].step" :min="schema[key].min" :max="schema[key].max"
-                         class="input-number" />
-                </template>
+                <div class="setting-control">
+                  <!-- Float -->
+                  <template v-if="schema[key].type === 'float'">
+                    <input type="number" :id="key" v-model.number="settings[key]" :step="schema[key].step"
+                      :min="schema[key].min" :max="schema[key].max" class="input-number" />
+                  </template>
 
-                <!-- Integer -->
-                <template v-else-if="schema[key].type === 'integer'">
-                  <input type="number" :id="key" v-model.number="settings[key]"
-                         step="1" :min="schema[key].min" :max="schema[key].max"
-                         class="input-number" />
-                </template>
+                  <!-- Integer -->
+                  <template v-else-if="schema[key].type === 'integer'">
+                    <input type="number" :id="key" v-model.number="settings[key]" step="1" :min="schema[key].min"
+                      :max="schema[key].max" class="input-number" />
+                  </template>
 
-                <!-- Boolean toggle -->
-                <template v-else-if="schema[key].type === 'boolean'">
-                  <label class="toggle-switch">
-                    <input type="checkbox" :id="key" v-model="settings[key]" />
-                    <span class="toggle-slider"></span>
-                    <span class="toggle-label">{{ settings[key] ? 'True' : 'False' }}</span>
-                  </label>
-                </template>
-
-                <!-- String -->
-                <template v-else-if="schema[key].type === 'string'">
-                  <input type="text" :id="key" v-model="settings[key]" class="input-text" />
-                </template>
-
-                <!-- Enum -->
-                <template v-else-if="schema[key].type === 'enum'">
-                  <select :id="key" v-model="settings[key]" class="input-select">
-                    <option v-for="opt in schema[key].options" :key="opt" :value="opt">{{ opt }}</option>
-                  </select>
-                </template>
-
-                <!-- Platforms (CrossplayPlatforms) -->
-                <template v-else-if="schema[key].type === 'platforms'">
-                  <div class="platforms-control">
-                    <label v-for="p in schema[key].platforms" :key="p" class="platform-item">
-                      <input type="checkbox" :value="p"
-                             :checked="settings[key].includes(p)"
-                             @change="togglePlatform(key, p)" />
-                      {{ p }}
+                  <!-- Boolean toggle -->
+                  <template v-else-if="schema[key].type === 'boolean'">
+                    <label class="toggle-switch">
+                      <input type="checkbox" :id="key" v-model="settings[key]" />
+                      <span class="toggle-slider"></span>
+                      <span class="toggle-label">{{ settings[key] ? 'True' : 'False' }}</span>
                     </label>
-                  </div>
-                </template>
+                  </template>
 
-                <!-- Tech list (DenyTechnologyList) -->
-                <template v-else-if="schema[key].type === 'techlist'">
-                  <textarea :id="key" v-model="settings[key]" class="input-textarea"
-                            placeholder="カンマ区切りでIDを入力&#10;例: PALBOX,RepairBench"></textarea>
-                </template>
+                  <!-- String -->
+                  <template v-else-if="schema[key].type === 'string'">
+                    <input type="text" :id="key" v-model="settings[key]" class="input-text" />
+                  </template>
+
+                  <!-- Enum -->
+                  <template v-else-if="schema[key].type === 'enum'">
+                    <select :id="key" v-model="settings[key]" class="input-select">
+                      <option v-for="opt in schema[key].options" :key="opt" :value="opt">{{ opt }}</option>
+                    </select>
+                  </template>
+
+                  <!-- Platforms (CrossplayPlatforms) -->
+                  <template v-else-if="schema[key].type === 'platforms'">
+                    <div class="platforms-control">
+                      <label v-for="p in schema[key].platforms" :key="p" class="platform-item">
+                        <input type="checkbox" :value="p" :checked="settings[key].includes(p)"
+                          @change="togglePlatform(key, p)" />
+                        {{ p }}
+                      </label>
+                    </div>
+                  </template>
+
+                  <!-- Tech list (DenyTechnologyList) -->
+                  <template v-else-if="schema[key].type === 'techlist'">
+                    <textarea :id="key" v-model="settings[key]" class="input-textarea"
+                      placeholder="カンマ区切りでIDを入力&#10;例: PALBOX,RepairBench"></textarea>
+                  </template>
+                </div>
               </div>
             </div>
           </div>
@@ -116,15 +118,14 @@
           <h2>エクスポート</h2>
           <p>現在の設定をBASE64文字列として出力します。他のブラウザへ設定を共有できます。</p>
           <button class="btn btn-primary" @click="doExport">エクスポート</button>
-          <textarea v-if="exportData" readonly class="data-textarea"
-                    :value="exportData" @click="selectAllText($event)"></textarea>
+          <textarea v-if="exportData" readonly class="data-textarea" :value="exportData"
+            @click="selectAllText($event)"></textarea>
         </section>
 
         <section class="export-import-section">
           <h2>インポート</h2>
           <p>エクスポートしたBASE64文字列を貼り付けて設定を読み込みます。</p>
-          <textarea v-model="importData" class="data-textarea"
-                    placeholder="BASE64文字列をここに貼り付け..."></textarea>
+          <textarea v-model="importData" class="data-textarea" placeholder="BASE64文字列をここに貼り付け..."></textarea>
           <button class="btn btn-success" @click="doImport" :disabled="!importData.trim()">インポート</button>
           <p v-if="importError" class="error-msg">{{ importError }}</p>
           <p v-if="importSuccess" class="success-msg">設定をインポートしました！</p>
@@ -132,10 +133,12 @@
 
         <section class="export-import-section">
           <h2>INI ファイルからインポート</h2>
-          <p>既存の <code style="font-family:monospace;background:var(--bg-input);padding:1px 4px;border-radius:3px;">PalWorldSettings.ini</code> の内容を貼り付けて設定を反映させます。<br>
-          「設定プレビュー」タブのINI出力をそのまま貼り付けることもできます。</p>
+          <p>既存の <code
+              style="font-family:monospace;background:var(--bg-input);padding:1px 4px;border-radius:3px;">PalWorldSettings.ini</code>
+            の内容を貼り付けて設定を反映させます。<br>
+            「設定プレビュー」タブのINI出力をそのまま貼り付けることもできます。</p>
           <textarea v-model="iniImportData" class="data-textarea" rows="6"
-                    placeholder="[/Script/Pal.PalGameWorldSettings]&#10;OptionSettings=(BaseCampMaxNumInGuild=4,...) の内容を貼り付け..."></textarea>
+            placeholder="[/Script/Pal.PalGameWorldSettings]&#10;OptionSettings=(BaseCampMaxNumInGuild=4,...) の内容を貼り付け..."></textarea>
           <button class="btn btn-success" @click="doImportIni" :disabled="!iniImportData.trim()">INI をインポート</button>
           <p v-if="iniImportError" class="error-msg">{{ iniImportError }}</p>
           <p v-if="iniImportSuccess" class="success-msg">{{ iniImportSuccessMsg }}</p>
@@ -152,4 +155,5 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
   <script src="js/app.js"></script>
 </body>
+
 </html>
