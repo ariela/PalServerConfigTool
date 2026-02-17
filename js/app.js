@@ -764,7 +764,29 @@ function generateIniOutput(settings, customSettings) {
     }
   }
 
-  const allPairs = [...pairs, ...customPairs];
+  // Deduplicate keys: custom settings override standard settings
+  const keyValueMap = {};
+
+  // First, add all standard pairs
+  pairs.forEach(pair => {
+    const eqIndex = pair.indexOf('=');
+    if (eqIndex !== -1) {
+      const key = pair.substring(0, eqIndex);
+      keyValueMap[key] = pair;
+    }
+  });
+
+  // Then, add custom pairs (overriding any duplicates)
+  customPairs.forEach(pair => {
+    const eqIndex = pair.indexOf('=');
+    if (eqIndex !== -1) {
+      const key = pair.substring(0, eqIndex);
+      keyValueMap[key] = pair;
+    }
+  });
+
+  // Build final array from map entries
+  const allPairs = Object.values(keyValueMap);
   return header + '\nOptionSettings=(' + allPairs.join(',') + ')';
 }
 
@@ -826,6 +848,7 @@ const app = createApp({
     const droppedItems = ref([]);
 
     CATEGORIES.forEach(cat => { openCategories.value[cat.id] = true; });
+    openCategories.value['custom'] = true;
 
     const iniOutput = computed(() => generateIniOutput(settings.value, customSettings.value));
 
