@@ -1092,10 +1092,14 @@
 
       // 括弧の深さを追跡して内側の文字列を取り出す
       let depth = 0;
+      let inQuotes = false;
       let innerEnd = -1;
       for (let i = startParen; i < content.length; i++) {
-        if (content[i] === '(') depth++;
-        else if (content[i] === ')') {
+        const ch = content[i];
+        const prev = i > 0 ? content[i - 1] : '';
+        if (ch === '"' && prev !== '\\') inQuotes = !inQuotes;
+        if (!inQuotes && ch === '(') depth++;
+        else if (!inQuotes && ch === ')') {
           depth--;
           if (depth === 0) { innerEnd = i; break; }
         }
