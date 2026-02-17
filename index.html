@@ -1115,14 +1115,15 @@
 
       for (let i = 0; i < inner.length; i++) {
         const c = inner[i];
+        const prev = i > 0 ? inner[i - 1] : '';
         if (inKey) {
           if (c === '=') { inKey = false; value = ''; }
           else { key += c; }
         } else {
           if (inQuote) {
             value += c;
-            if (c === '"') inQuote = false;
-          } else if (c === '"') {
+            if (c === '"' && prev !== '\\') inQuote = false;
+          } else if (c === '"' && prev !== '\\') {
             inQuote = true;
             value += c;
           } else if (c === '(') {
