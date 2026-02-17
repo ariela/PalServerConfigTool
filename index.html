@@ -101,6 +101,35 @@
             </div>
           </div>
         </section>
+
+        <!-- Custom Settings Section -->
+        <section class="category-section">
+          <div class="category-header" @click="toggleCategory('custom')">
+            <span class="category-icon">⚙️</span>
+            <span class="category-label">カスタム設定</span>
+            <span class="category-count">独自項目</span>
+            <span class="category-toggle">{{ openCategories['custom'] ? '▼' : '▶' }}</span>
+          </div>
+
+          <div v-show="openCategories['custom']" class="category-body">
+            <div class="subgroup">
+              <div class="subgroup-header">🔧 カスタム設定項目</div>
+              <div class="setting-row">
+                <div class="setting-info">
+                  <label for="customSettings" class="setting-label">カスタム設定</label>
+                  <span class="setting-key">CustomSettings</span>
+                  <p class="setting-desc">スキーマに存在しない独自の設定項目をここに追加できます。1行につき1つの設定を key=value
+                    形式で記述してください。INIインポート時に未知の項目が見つかった場合、自動的にここに追加されます。</p>
+                </div>
+                <div class="setting-control">
+                  <textarea id="customSettings" v-model="customSettings" class="input-textarea"
+                    placeholder="例:&#10;bEnableUnknownFeature=&quot;True&quot;&#10;CustomParameter=123&#10;OldServerSetting=&quot;value&quot;"
+                    rows="8"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
 
       <!-- Preview Tab -->
@@ -142,6 +171,21 @@
           <button class="btn btn-success" @click="doImportIni" :disabled="!iniImportData.trim()">INI をインポート</button>
           <p v-if="iniImportError" class="error-msg">{{ iniImportError }}</p>
           <p v-if="iniImportSuccess" class="success-msg">{{ iniImportSuccessMsg }}</p>
+
+          <!-- Display dropped items -->
+          <div v-if="droppedItems.length > 0"
+            style="margin-top: 1rem; padding: 1rem; background: var(--bg-input); border-radius: 8px; border-left: 4px solid #ff9800;">
+            <h3 style="margin-top: 0; font-size: 1rem; color: #ff9800;">⚠️ スキップされた項目（カスタム設定に追加されました）</h3>
+            <p style="font-size: 0.9rem; margin-bottom: 0.5rem;">以下の {{ droppedItems.length }}
+              件の項目はスキーマに存在しないため、カスタム設定として保存されました：</p>
+            <ul
+              style="margin: 0.5rem 0; padding-left: 1.5rem; font-family: monospace; font-size: 0.85rem; max-height: 200px; overflow-y: auto;">
+              <li v-for="(item, idx) in droppedItems" :key="idx" style="margin-bottom: 0.25rem;">
+                <strong>{{ item.key }}</strong> = {{ item.value }}
+              </li>
+            </ul>
+            <p style="font-size: 0.85rem; margin-top: 0.5rem; color: #888;">これらの設定は「設定編集」タブの「カスタム設定」セクションで編集できます。</p>
+          </div>
         </section>
       </div>
     </main>
