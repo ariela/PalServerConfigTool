@@ -512,6 +512,17 @@
           <p v-if="importError" class="error-msg">{{ importError }}</p>
           <p v-if="importSuccess" class="success-msg">設定をインポートしました！</p>
         </section>
+
+        <section class="export-import-section">
+          <h2>INI ファイルからインポート</h2>
+          <p>既存の <code style="font-family:monospace;background:var(--bg-input);padding:1px 4px;border-radius:3px;">PalWorldSettings.ini</code> の内容を貼り付けて設定を反映させます。<br>
+          「設定プレビュー」タブのINI出力をそのまま貼り付けることもできます。</p>
+          <textarea v-model="iniImportData" class="data-textarea" rows="6"
+                    placeholder="[/Script/Pal.PalGameWorldSettings]&#10;OptionSettings=(BaseCampMaxNumInGuild=4,...) の内容を貼り付け..."></textarea>
+          <button class="btn btn-success" @click="doImportIni" :disabled="!iniImportData.trim()">INI をインポート</button>
+          <p v-if="iniImportError" class="error-msg">{{ iniImportError }}</p>
+          <p v-if="iniImportSuccess" class="success-msg">{{ iniImportSuccessMsg }}</p>
+        </section>
       </div>
     </main>
 
@@ -1070,6 +1081,111 @@
       }
     }
 
+    function parseOptionSettings(content) {
+      // OptionSettings=( の位置を探す
+      const optIdx = content.indexOf('OptionSettings=');
+      if (optIdx === -1) return null;
+
+      let startParen = optIdx + 'OptionSettings='.length;
+      while (startParen < content.length && content[startParen] !== '(') startParen++;
+      if (startParen >= content.length) return null;
+
+      // 括弧の深さを追跡して内側の文字列を取り出す
+      let depth = 0;
+      let innerEnd = -1;
+      for (let i = startParen; i < content.length; i++) {
+        if (content[i] === '(') depth++;
+        else if (content[i] === ')') {
+          depth--;
+          if (depth === 0) { innerEnd = i; break; }
+        }
+      }
+      if (innerEnd === -1) return null;
+
+      const inner = content.slice(startParen + 1, innerEnd);
+
+      // 文字単位のステートマシンでkey=valueペアを分解
+      const result = {};
+      let key = '', value = '';
+      let inKey = true, inQuote = false, parenDepth = 0;
+
+      for (let i = 0; i < inner.length; i++) {
+        const c = inner[i];
+        if (inKey) {
+          if (c === '=') { inKey = false; value = ''; }
+          else { key += c; }
+        } else {
+          if (inQuote) {
+            value += c;
+            if (c === '"') inQuote = false;
+          } else if (c === '"') {
+            inQuote = true;
+            value += c;
+          } else if (c === '(') {
+            parenDepth++;
+            value += c;
+          } else if (c === ')') {
+            if (parenDepth > 0) { parenDepth--; value += c; }
+          } else if (c === ',' && parenDepth === 0) {
+            const k = key.trim();
+            if (k) result[k] = value.trim();
+            key = ''; value = ''; inKey = true;
+          } else {
+            value += c;
+          }
+        }
+      }
+      const k = key.trim();
+      if (k) result[k] = value.trim();
+      return result;
+    }
+
+    function coerceValue(key, rawValue) {
+      const schema = SETTINGS_SCHEMA[key];
+      if (!schema) return null;
+      switch (schema.type) {
+        case 'float': {
+          const v = parseFloat(rawValue);
+          return isNaN(v) ? null : v;
+        }
+        case 'integer': {
+          const v = parseInt(rawValue, 10);
+          return isNaN(v) ? null : v;
+        }
+        case 'boolean': {
+          if (rawValue === '"True"' || rawValue === 'True') return true;
+          if (rawValue === '"False"' || rawValue === 'False') return false;
+          return null;
+        }
+        case 'string': {
+          let s = rawValue;
+          if (s.startsWith('"') && s.endsWith('"')) s = s.slice(1, -1);
+          return s;
+        }
+        case 'enum': {
+          let s = rawValue;
+          if (s.startsWith('"') && s.endsWith('"')) s = s.slice(1, -1);
+          return schema.options.includes(s) ? s : null;
+        }
+        case 'platforms': {
+          let s = rawValue.trim();
+          if (s.startsWith('(')) s = s.slice(1);
+          if (s.endsWith(')')) s = s.slice(0, -1);
+          if (!s.trim()) return [];
+          return s.split(',').map(p => p.trim()).filter(p => p.length > 0);
+        }
+        case 'techlist': {
+          let s = rawValue.trim();
+          if (s.startsWith('(')) s = s.slice(1);
+          if (s.endsWith(')')) s = s.slice(0, -1);
+          if (!s.trim()) return '';
+          return s.split(',').map(p => p.trim().replace(/^"|"$/g, '')).filter(p => p.length > 0).join(',');
+        }
+        default:
+          return rawValue;
+      }
+    }
+
     function generateIniOutput(settings) {
       const header = '[/Script/Pal.PalGameWorldSettings]';
       const pairs = PARAM_ORDER.map(key => {
@@ -1113,6 +1229,10 @@
         const importError = ref('');
         const importSuccess = ref(false);
         const copySuccess = ref(false);
+        const iniImportData = ref('');
+        const iniImportError = ref('');
+        const iniImportSuccess = ref(false);
+        const iniImportSuccessMsg = ref('');
 
         CATEGORIES.forEach(cat => { openCategories.value[cat.id] = true; });
 
@@ -1213,14 +1333,53 @@
           event.target.select();
         }
 
+        function doImportIni() {
+          iniImportError.value = '';
+          iniImportSuccess.value = false;
+          iniImportSuccessMsg.value = '';
+
+          const trimmed = iniImportData.value.trim();
+          if (!trimmed) {
+            iniImportError.value = 'INIファイルの内容が入力されていません';
+            return;
+          }
+
+          const parsed = parseOptionSettings(trimmed);
+          if (!parsed) {
+            iniImportError.value = 'OptionSettings が見つかりません。正しい PalWorldSettings.ini の内容を貼り付けてください。';
+            return;
+          }
+
+          let applied = 0;
+          let skipped = 0;
+          Object.entries(parsed).forEach(([key, rawValue]) => {
+            if (key in SETTINGS_SCHEMA) {
+              const coerced = coerceValue(key, rawValue);
+              if (coerced !== null) {
+                settings.value[key] = coerced;
+                applied++;
+              } else {
+                skipped++;
+              }
+            } else {
+              skipped++;
+            }
+          });
+
+          iniImportSuccessMsg.value = `${applied}件の設定を適用しました（${skipped}件をスキップ）`;
+          iniImportSuccess.value = true;
+          setTimeout(() => { iniImportSuccess.value = false; }, 4000);
+        }
+
         return {
           activeTab, settings, openCategories,
           exportData, importData, importError, importSuccess,
           copySuccess, iniOutput,
+          iniImportData, iniImportError, iniImportSuccess, iniImportSuccessMsg,
           schema: SETTINGS_SCHEMA,
           categories: CATEGORIES,
           toggleCategory, togglePlatform, resetToDefaults,
-          copyToClipboard, doExport, doImport, selectAllText
+          copyToClipboard, doExport, doImport, selectAllText, doImportIni
         };
       }
     });
