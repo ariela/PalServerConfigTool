@@ -701,8 +701,9 @@ function coerceValue(key, rawValue) {
       return Number.isInteger(v) ? v : null;
     }
     case 'boolean': {
-      if (rawValue === '"True"' || rawValue === 'True') return true;
-      if (rawValue === '"False"' || rawValue === 'False') return false;
+      const b = String(rawValue).replace(/^"|"$/g, '').toLowerCase();
+      if (b === 'true') return true;
+      if (b === 'false') return false;
       return null;
     }
     case 'string': {
